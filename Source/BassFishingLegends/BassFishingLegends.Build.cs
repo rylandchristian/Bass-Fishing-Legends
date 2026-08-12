@@ -6,6 +6,9 @@ public class BassFishingLegends : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+		// Headers live next to the .cpp files (Game/, Fishing/, …), not under Public/.
+		PublicIncludePaths.Add(ModuleDirectory);
+
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core",
@@ -18,7 +21,9 @@ public class BassFishingLegends : ModuleRules
 			"SlateCore",
 			"CableComponent",
 			"DeveloperSettings",
-			"AIModule"
+			"AIModule",
+			"NetCore",
+			"IrisCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

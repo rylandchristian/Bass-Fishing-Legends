@@ -77,10 +77,9 @@ void ABFLGameMode::StartPlay()
 	if (bSpawnDayNight)
 	{
 		bool bHasDayNight = false;
-		for (TActorIterator<ABFLDayNightActor> It(GetWorld()); It; ++It)
+		if (TActorIterator<ABFLDayNightActor> It(GetWorld()); It)
 		{
 			bHasDayNight = true;
-			break;
 		}
 		if (!bHasDayNight)
 		{
@@ -376,7 +375,7 @@ void ABFLGameMode::EnsurePlayerStart()
 		return;
 	}
 
-	for (TActorIterator<APlayerStart> It(World); It; ++It)
+	if (TActorIterator<APlayerStart> It(World); It)
 	{
 		return;
 	}
@@ -396,10 +395,9 @@ void ABFLGameMode::EnsureLighting()
 	}
 
 	bool bHasSun = false;
-	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+	if (TActorIterator<ADirectionalLight> It(World); It)
 	{
 		bHasSun = true;
-		break;
 	}
 	if (!bHasSun)
 	{
@@ -419,10 +417,9 @@ void ABFLGameMode::EnsureLighting()
 	}
 
 	bool bHasSky = false;
-	for (TActorIterator<ASkyLight> It(World); It; ++It)
+	if (TActorIterator<ASkyLight> It(World); It)
 	{
 		bHasSky = true;
-		break;
 	}
 	if (!bHasSky)
 	{

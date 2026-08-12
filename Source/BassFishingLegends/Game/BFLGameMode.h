@@ -123,10 +123,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL")
 	TArray<FBFLCatchRecord> CatchLog;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL")
+	UPROPERTY(VisibleAnywhere, Category = "BFL")
 	TWeakObjectPtr<ABFLBaitActor> ActiveBait;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL")
+	UPROPERTY()
 	TArray<TWeakObjectPtr<ABFLFishActor>> LiveFish;
 
 	void ApplySettingsDefaults();
