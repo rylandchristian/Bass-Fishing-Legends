@@ -1,0 +1,35 @@
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.idea/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+*.DS_Store
+
+# Local editor
+*.code-workspace
+.vscode/
+
+# Builds / cooked
+LinuxNoEditor/
+WindowsNoEditor/
+Windows/
+Linux/
+
+# Python venv (not part of the game)
+venv/
+.venv/
+
+# Crash dumps
+*.dmp
+*.log
