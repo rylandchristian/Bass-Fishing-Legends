@@ -229,9 +229,9 @@ void ABFLGameMode::BuildDefaultLake()
 		false);
 	if (Water)
 	{
-		if (AActor* Owner = Water->GetOwner())
+		if (AActor* WaterActor = Water->GetOwner())
 		{
-			Owner->Tags.AddUnique(FName(TEXT("WaterSurface")));
+			WaterActor->Tags.AddUnique(FName(TEXT("WaterSurface")));
 		}
 	}
 
