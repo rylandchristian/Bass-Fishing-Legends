@@ -20,6 +20,21 @@ UBFLFishingComponent::UBFLFishingComponent()
 	BaitClass = ABFLBaitActor::StaticClass();
 }
 
+FBFLFightRates UBFLFishingComponent::GetFightRates() const
+{
+	FBFLFightRates Rates;
+	Rates.ReelTensionRate = ReelTensionRate;
+	Rates.TensionDecayRate = TensionDecayRate;
+	Rates.IdleTensionFloor = IdleTensionFloor;
+	Rates.OverreelPenalty = OverreelPenalty;
+	Rates.YellowTension = YellowTension;
+	Rates.RedTension = RedTension;
+	Rates.FishPullToTension = FishPullToTension;
+	Rates.ReelLeakRate = ReelLeakRate;
+	Rates.ReelGainScale = ReelGainScale;
+	return Rates;
+}
+
 void UBFLFishingComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -159,7 +174,7 @@ void UBFLFishingComponent::NotifyFishBite(ABFLFishActor* Fish)
 
 	HookedFish = Fish;
 	Bait->HookFish(Fish);
-	Tension = 0.22f;
+	Tension = GetFightRates().StartTension;
 	ReelProgress = 0.f;
 	bReeling = false;
 	FightPulsePhase = FMath::FRand() * PI * 2.f;
@@ -212,51 +227,34 @@ void UBFLFishingComponent::TickFighting(float DeltaTime)
 	}
 
 	const FBFLFishSpeciesDef& Def = HookedFish->GetSpeciesDef();
+	const FBFLFightRates Rates = GetFightRates();
 
-	// Fish fight pulses: a sine wave plus a slower surge so the meter is readable.
-	FightPulsePhase += DeltaTime * (1.6f + Def.FightIntensity);
-	const float Pulse = 0.5f + 0.5f * FMath::Sin(FightPulsePhase);
-	const float Surge = 0.5f + 0.5f * FMath::Sin(FightPulsePhase * 0.37f + 1.1f);
-	const float FishPull = Def.FightIntensity * (0.35f + 0.65f * Pulse * Surge);
+	FBFLFightState FightState;
+	FightState.Tension = Tension;
+	FightState.Reel = ReelProgress;
+	FightState.PulsePhase = FightPulsePhase;
 
-	float TensionDelta = FishPull * 0.22f;
-	if (bReeling)
-	{
-		TensionDelta += ReelTensionRate;
-		if (Tension > 0.7f)
-		{
-			TensionDelta += OverreelPenalty * (Tension - 0.7f);
-		}
-	}
-	else
-	{
-		TensionDelta -= TensionDecayRate;
-	}
+	const EBFLFightOutcome Outcome = BFLFightMath::Tick(
+		FightState,
+		bReeling,
+		Def.FightIntensity,
+		Def.StaminaSeconds,
+		DeltaTime,
+		Rates);
 
-	Tension = FMath::Clamp(Tension + TensionDelta * DeltaTime, IdleTensionFloor, 1.f);
-
-	if (bReeling)
-	{
-		// Reeling is slower when the line is screaming.
-		const float Efficiency = FMath::Clamp(1.15f - Tension * 0.85f, 0.25f, 1.f);
-		const float Need = FMath::Max(Def.StaminaSeconds, 1.f);
-		ReelProgress = FMath::Clamp(ReelProgress + (Efficiency * DeltaTime) / Need, 0.f, 1.f);
-	}
-	else
-	{
-		// Fish takes a little line back if you stop reeling.
-		ReelProgress = FMath::Clamp(ReelProgress - 0.06f * DeltaTime, 0.f, 1.f);
-	}
+	Tension = FightState.Tension;
+	ReelProgress = FightState.Reel;
+	FightPulsePhase = FightState.PulsePhase;
 
 	OnTensionChanged.Broadcast(Tension, ReelProgress);
 
-	if (Tension >= 1.f)
+	if (Outcome == EBFLFightOutcome::Snap)
 	{
 		SnapLine();
 		return;
 	}
 
-	if (ReelProgress >= 1.f)
+	if (Outcome == EBFLFightOutcome::Land)
 	{
 		LandFish();
 	}

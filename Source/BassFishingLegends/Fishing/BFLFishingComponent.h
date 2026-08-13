@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "BFLTypes.h"
 #include "Components/ActorComponent.h"
+#include "Fishing/BFLFightMath.h"
 #include "BFLFishingComponent.generated.h"
 
 class ABFLBaitActor;
@@ -110,17 +111,44 @@ public:
 	TSubclassOf<ABFLBaitActor> BaitClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
-	float ReelTensionRate = 0.28f;
+	float ReelTensionRate = 0.16f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
-	float TensionDecayRate = 0.22f;
+	float TensionDecayRate = 0.30f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
 	float IdleTensionFloor = 0.08f;
 
-	/** Extra tension when the player keeps reeling while the bar is already high. */
+	/** Extra tension when the player keeps reeling in the red. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
-	float OverreelPenalty = 0.35f;
+	float OverreelPenalty = 0.45f;
+
+	/** Yellow band. Reel through this. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float YellowTension = 0.55f;
+
+	/** Red band. Ease off. Overreel starts here. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float RedTension = 0.78f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
+	float FishPullToTension = 0.16f;
+
+	/** Reel lost per second while easing off. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
+	float ReelLeakRate = 0.015f;
+
+	/** Scales reel gained while reeling. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
+	float ReelGainScale = 1.85f;
+
+	UFUNCTION(BlueprintPure, Category = "BFL|Fight")
+	float GetYellowTension() const { return YellowTension; }
+
+	UFUNCTION(BlueprintPure, Category = "BFL|Fight")
+	float GetRedTension() const { return RedTension; }
+
+	FBFLFightRates GetFightRates() const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
 	float SuccessHoldTime = 0.35f;

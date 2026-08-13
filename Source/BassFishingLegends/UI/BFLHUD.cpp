@@ -87,11 +87,11 @@ void ABFLHUD::DrawHUD()
 
 			const float Tension = Fishing->GetTension();
 			FLinearColor TensionColor = FLinearColor(0.2f, 0.8f, 0.25f);
-			if (Tension > 0.55f)
+			if (Tension > Fishing->GetYellowTension())
 			{
 				TensionColor = FLinearColor(0.95f, 0.75f, 0.12f);
 			}
-			if (Tension > 0.78f)
+			if (Tension > Fishing->GetRedTension())
 			{
 				TensionColor = FLinearColor(0.9f, 0.12f, 0.1f);
 			}
