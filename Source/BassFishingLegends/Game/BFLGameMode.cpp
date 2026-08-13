@@ -54,7 +54,9 @@ void ABFLGameMode::StartPlay()
 		{
 			for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 			{
-				if (It->GetName().Contains(TEXT("WaterSurface")) || It->ActorHasTag(FName(TEXT("WaterSurface"))))
+				if (It->ActorHasTag(FName(TEXT("WaterSurface")))
+					|| It->ActorHasTag(FName(TEXT("BFL_Generated")))
+					|| It->GetName().Contains(TEXT("WaterSurface")))
 				{
 					bWaterExists = true;
 					LakeCenter = It->GetActorLocation();
@@ -445,14 +447,30 @@ UStaticMeshComponent* ABFLGameMode::SpawnColoredMesh(
 	}
 
 	FActorSpawnParameters Params;
-	Params.Name = MakeUniqueObjectName(World, AStaticMeshActor::StaticClass(), ActorName);
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.ObjectFlags = RF_Transient;
+#if WITH_EDITOR
+	// Runtime lake props must not create OFPA packages or require a unique saved name.
+	Params.bCreateActorPackage = false;
+#endif
 
 	AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), Location, Rotation, Params);
 	if (!Actor)
 	{
 		return nullptr;
 	}
+
+	Actor->Tags.AddUnique(FName(TEXT("BFL_Generated")));
+	if (!ActorName.IsNone())
+	{
+		Actor->Tags.AddUnique(ActorName);
+	}
+#if WITH_EDITOR
+	if (!ActorName.IsNone())
+	{
+		Actor->SetActorLabel(ActorName.ToString(), false);
+	}
+#endif
 
 	Actor->SetActorScale3D(Scale);
 	UStaticMeshComponent* Comp = Actor->GetStaticMeshComponent();
