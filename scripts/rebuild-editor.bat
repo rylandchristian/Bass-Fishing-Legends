@@ -29,15 +29,16 @@ if exist Binaries rmdir /s /q Binaries
 echo Building BassFishingLegendsEditor Win64 Development...
 call "%ENGINE%\Engine\Build\BatchFiles\Build.bat" BassFishingLegendsEditor Win64 Development -Project="%PROJECT%" -WaitMutex
 set "ERR=%ERRORLEVEL%"
-if not "%ERR%"=="0" (
-	echo.
-	echo BUILD FAILED (%ERR%). Open this log and search for "error C":
-	echo   %LOCALAPPDATA%\UnrealBuildTool\Log.txt
-	popd
-	exit /b %ERR%
-)
+if not "%ERR%"=="0" goto :fail
 
 echo.
 echo Build succeeded. Double-click BassFishingLegends.uproject to open the editor.
 popd
 exit /b 0
+
+:fail
+echo.
+echo BUILD FAILED. Exit code %ERR%. Open this log and search for error C:
+echo %LOCALAPPDATA%\UnrealBuildTool\Log.txt
+popd
+exit /b %ERR%
