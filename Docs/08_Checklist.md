@@ -42,7 +42,7 @@ Work top to bottom. A fresh clone should pass the **Must work** section after on
 
 | Symptom | Fix |
 |---|---|
-| Module missing / compile prompt loops | Build `BassFishingLegendsEditor` from Visual Studio / `Build.sh`. Read the first C++ error. |
+| Module missing / compile prompt loops | Close the editor. On Windows run `scripts\rebuild-editor.bat`. On Linux run `./scripts/build-editor.sh`. Read the first `error C` in `%LOCALAPPDATA%\UnrealBuildTool\Log.txt`. |
 | Play, but no boat | World Settings GameMode is not `BFLGameMode`. |
 | Boat flies / sinks | `Water Height` does not match the plane. |
 | Cast never lands | Camera aimed at the sky; loft still hits eventually. Look toward the water. |

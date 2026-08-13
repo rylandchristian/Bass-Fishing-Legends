@@ -8,6 +8,7 @@ public class BassFishingLegendsTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+		CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Warning;
 		ExtraModuleNames.Add("BassFishingLegends");
 	}
 }

@@ -435,7 +435,7 @@ UStaticMeshComponent* ABFLGameMode::SpawnColoredMesh(
 	const FRotator& Rotation,
 	const FVector& Scale,
 	const FLinearColor& Color,
-	const FName& Name,
+	const FName& ActorName,
 	bool bCollision)
 {
 	UWorld* World = GetWorld();
@@ -445,7 +445,7 @@ UStaticMeshComponent* ABFLGameMode::SpawnColoredMesh(
 	}
 
 	FActorSpawnParameters Params;
-	Params.Name = MakeUniqueObjectName(World, AStaticMeshActor::StaticClass(), Name);
+	Params.Name = MakeUniqueObjectName(World, AStaticMeshActor::StaticClass(), ActorName);
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), Location, Rotation, Params);

@@ -167,8 +167,8 @@ void UBFLFishingComponent::NotifyFishBite(ABFLFishActor* Fish)
 
 	if (ABFLGameMode* GM = UBFLStatics::GetBFLGameMode(this))
 	{
-		const FText Name = Fish->GetSpeciesDef().DisplayName;
-		GM->BroadcastNotification(FText::Format(NSLOCTEXT("BFL", "FishOn", "FISH ON!  {0}"), Name), 2.0f);
+		const FText SpeciesName = Fish->GetSpeciesDef().DisplayName;
+		GM->BroadcastNotification(FText::Format(NSLOCTEXT("BFL", "FishOn", "FISH ON!  {0}"), SpeciesName), 2.0f);
 	}
 }
 
@@ -434,9 +434,9 @@ FVector UBFLFishingComponent::GetCastStart() const
 	{
 		return CastOriginOverride->GetComponentLocation();
 	}
-	if (const AActor* Owner = GetOwner())
+	if (const AActor* OwnerActor = GetOwner())
 	{
-		return Owner->GetActorLocation() + Owner->GetActorForwardVector() * 80.f + FVector(0.f, 0.f, 80.f);
+		return OwnerActor->GetActorLocation() + OwnerActor->GetActorForwardVector() * 80.f + FVector(0.f, 0.f, 80.f);
 	}
 	return FVector::ZeroVector;
 }

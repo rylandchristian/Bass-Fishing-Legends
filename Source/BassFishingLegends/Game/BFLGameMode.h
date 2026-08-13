@@ -142,6 +142,6 @@ protected:
 		const FRotator& Rotation,
 		const FVector& Scale,
 		const FLinearColor& Color,
-		const FName& Name,
+		const FName& ActorName,
 		bool bCollision = true);
 };

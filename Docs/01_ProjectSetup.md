@@ -41,6 +41,30 @@ First compile takes several minutes. Watch the Output Log for `LogBFL: Bass Fish
 
 ---
 
+## Windows 11 — rebuild after a compile failure
+
+Close the Unreal Editor first. In **PowerShell** or **cmd**, from the project folder:
+
+```bat
+git pull origin dev
+scripts\rebuild-editor.bat
+```
+
+If your engine is not at `C:\UE_5.8`:
+
+```bat
+set UE_ROOT=C:\Path\To\UE_5.8
+scripts\rebuild-editor.bat
+```
+
+The script deletes `Intermediate` and `Binaries`, then compiles `BassFishingLegendsEditor`. If it fails, open `%LOCALAPPDATA%\UnrealBuildTool\Log.txt` and search for `error C`.
+
+Do **not** click Play until that script prints `Build succeeded`. Then double-click `BassFishingLegends.uproject`.
+
+The folder name can contain spaces (`Bass-Fishing-Legends 5.8 5.8`). That is fine as long as you run the script from *that* clone after `git pull`.
+
+---
+
 ## If the engine is elsewhere
 
 Set `UE_ROOT` before the scripts, or edit `~/.config/Epic/UnrealEngine/Install.ini`:

@@ -6,6 +6,10 @@ public class BassFishingLegends : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+		// UE 5.8 Latest treats MSVC C4458 (local hides class member) as an error.
+		// Linux clang in this engine drop ignores -Wshadow, so the same code compiled there.
+		CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Warning;
+
 		// Headers live next to the .cpp files (Game/, Fishing/, …), not under Public/.
 		PublicIncludePaths.Add(ModuleDirectory);
 
