@@ -51,7 +51,7 @@ void ABFLGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 
 void ABFLGameMode::StartPlay()
 {
-	if (bAutoBuildLake && GetWorld())
+	if (GetWorld())
 	{
 		TArray<FBFLPlacedActor> Placed;
 		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
@@ -59,8 +59,15 @@ void ABFLGameMode::StartPlay()
 			FBFLPlacedActor Hint;
 			Hint.Tags = It->Tags;
 			Hint.Name = It->GetName();
-			Hint.ClassName = It->GetClass() ? It->GetClass()->GetName() : FString();
 			Hint.Location = It->GetActorLocation();
+			for (UClass* Class = It->GetClass(); Class; Class = Class->GetSuperClass())
+			{
+				if (!Hint.ClassName.IsEmpty())
+				{
+					Hint.ClassName += TEXT(" ");
+				}
+				Hint.ClassName += Class->GetName();
+			}
 			Placed.Add(MoveTemp(Hint));
 		}
 
@@ -71,7 +78,7 @@ void ABFLGameMode::StartPlay()
 			WaterHeight = Layout.WaterHeight;
 		}
 
-		if (BFLLakePresence::ShouldAutoBuild(Placed, bSkipBuildIfWaterExists))
+		if (bAutoBuildLake && BFLLakePresence::ShouldAutoBuild(Placed, bSkipBuildIfWaterExists))
 		{
 			BuildDefaultLake();
 		}

@@ -59,6 +59,19 @@ bool FBFLLake_WaterBodyClassSkipsAutoBuild::RunTest(const FString& Parameters)
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBFLLake_BlueprintWaterBodySubclassSkipsAutoBuild,
+	"BFL.Look.BlueprintWaterBodySubclassSkipsAutoBuild",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FBFLLake_BlueprintWaterBodySubclassSkipsAutoBuild::RunTest(const FString& Parameters)
+{
+	TArray<FBFLPlacedActor> Actors;
+	Actors.Add(MakeActor(TEXT("Lake"), NAME_None, FVector::ZeroVector, TEXT("BP_Lake_C WaterBodyLake")));
+	TestFalse(TEXT("A Blueprint Water Body subclass still skips primitives"), BFLLakePresence::ShouldAutoBuild(Actors, true));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBFLLake_SkipFlagOffAlwaysBuilds,
 	"BFL.Look.SkipFlagOffAlwaysBuilds",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
