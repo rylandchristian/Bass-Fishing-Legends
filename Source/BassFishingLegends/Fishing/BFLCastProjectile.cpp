@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Fishing/BFLFishingComponent.h"
+#include "Game/BFLAssignedMesh.h"
 #include "Game/BFLStatics.h"
 
 ABFLCastProjectile::ABFLCastProjectile()
@@ -25,13 +26,21 @@ void ABFLCastProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UStaticMesh* const MeshBefore = Mesh ? Mesh->GetStaticMesh() : nullptr;
 	if (UStaticMesh* Sphere = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere")))
 	{
-		Mesh->SetStaticMesh(Sphere);
+		if (Mesh)
+		{
+			UStaticMesh* Current = Mesh->GetStaticMesh();
+			Mesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Sphere));
+		}
 	}
-	if (UMaterialInstanceDynamic* Mat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.95f, 0.75f, 0.15f)))
+	if (!MeshBefore && Mesh)
 	{
-		Mesh->SetMaterial(0, Mat);
+		if (UMaterialInstanceDynamic* Mat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.95f, 0.75f, 0.15f)))
+		{
+			Mesh->SetMaterial(0, Mat);
+		}
 	}
 }
 

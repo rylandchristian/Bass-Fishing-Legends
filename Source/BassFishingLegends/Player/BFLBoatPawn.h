@@ -9,6 +9,7 @@ class UBoxComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UStaticMeshComponent;
+class USkeletalMeshComponent;
 class USceneComponent;
 class UCableComponent;
 class UBFLFishingComponent;
@@ -48,8 +49,25 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL|Boat")
 	TObjectPtr<UStaticMeshComponent> RodMesh;
 
+	/** Second piece of the editor Rod. Hidden once an authored Rod mesh is set. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL|Boat")
+	TObjectPtr<UStaticMeshComponent> RodGripMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL|Boat")
+	TObjectPtr<USkeletalMeshComponent> AnglerMesh;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL|Boat")
 	TObjectPtr<USceneComponent> RodTip;
+
+	/** UE5 mannequin right hand. Used when an Angler mesh is assigned. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Angler")
+	FName AnglerHandSocket = TEXT("hand_r");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Angler")
+	FVector RodInHandLocation = FVector(8.f, 0.f, 4.f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Angler")
+	FRotator RodInHandRotation = FRotator(55.f, 0.f, 0.f);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BFL|Boat")
 	TObjectPtr<USpringArmComponent> SpringArm;
@@ -93,6 +111,8 @@ protected:
 	void AddMappingToController();
 	void BuildDefaultMappings(UInputMappingContext* IMC);
 	void ApplyPlaceholderMeshes();
+	void LoadAuthoredMeshes();
+	void AttachRodToAngler();
 	void DrawCastPreview() const;
 
 	UPROPERTY()

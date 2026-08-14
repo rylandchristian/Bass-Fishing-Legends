@@ -5,7 +5,9 @@
 #include "Fish/BFLFishCatalog.h"
 #include "Fishing/BFLBaitActor.h"
 #include "Fishing/BFLFishingComponent.h"
+#include "Game/BFLAssignedMesh.h"
 #include "Game/BFLGameMode.h"
+#include "Game/BFLGameSettings.h"
 #include "Game/BFLStatics.h"
 
 ABFLFishActor::ABFLFishActor()
@@ -33,18 +35,55 @@ ABFLFishActor::ABFLFishActor()
 	SpeciesDef = UBFLFishCatalog::MakeBuiltin(EFishSpecies::LargemouthBass);
 }
 
+void ABFLFishActor::ApplyPlaceholderMeshes()
+{
+	if (const UBFLGameSettings* Settings = UBFLGameSettings::Get())
+	{
+		if (UStaticMesh* Authored = Settings->FishBodyMesh.LoadSynchronous())
+		{
+			if (BodyMesh)
+			{
+				UStaticMesh* Current = BodyMesh->GetStaticMesh();
+				BodyMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Authored));
+			}
+		}
+	}
+
+	bHasAuthoredBodyMesh = BodyMesh && BodyMesh->GetStaticMesh() != nullptr;
+	if (!bHasAuthoredBodyMesh)
+	{
+		if (UStaticMesh* Sphere = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere")))
+		{
+			if (BodyMesh)
+			{
+				UStaticMesh* Current = BodyMesh->GetStaticMesh();
+				BodyMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Sphere));
+			}
+		}
+		if (UStaticMesh* Cone = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Cone.Cone")))
+		{
+			if (TailMesh)
+			{
+				UStaticMesh* Current = TailMesh->GetStaticMesh();
+				TailMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Cone));
+			}
+		}
+		return;
+	}
+
+	if (TailMesh)
+	{
+		TailMesh->SetVisibility(false);
+		TailMesh->SetHiddenInGame(true);
+		TailMesh->SetStaticMesh(nullptr);
+	}
+}
+
 void ABFLFishActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (UStaticMesh* Sphere = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere")))
-	{
-		BodyMesh->SetStaticMesh(Sphere);
-	}
-	if (UStaticMesh* Cone = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Cone.Cone")))
-	{
-		TailMesh->SetStaticMesh(Cone);
-	}
+	ApplyPlaceholderMeshes();
 
 	if (WeightLbs <= 0.1f)
 	{
@@ -92,12 +131,15 @@ void ABFLFishActor::ApplyVisuals()
 	if (BodyMesh)
 	{
 		BodyMesh->SetRelativeScale3D(SpeciesDef.MeshScale);
-		if (UMaterialInstanceDynamic* BodyMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.Color))
+		if (!bHasAuthoredBodyMesh)
 		{
-			BodyMesh->SetMaterial(0, BodyMat);
+			if (UMaterialInstanceDynamic* BodyMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.Color))
+			{
+				BodyMesh->SetMaterial(0, BodyMat);
+			}
 		}
 	}
-	if (TailMesh)
+	if (TailMesh && TailMesh->GetStaticMesh() && !bHasAuthoredBodyMesh)
 	{
 		if (UMaterialInstanceDynamic* TailMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.BellyColor))
 		{
@@ -114,7 +156,7 @@ void ABFLFishActor::Tick(float DeltaSeconds)
 	InterestCooldown = FMath::Max(0.f, InterestCooldown - DeltaSeconds);
 	SwimPhase += DeltaSeconds * 8.f;
 
-	if (TailMesh)
+	if (TailMesh && TailMesh->GetStaticMesh())
 	{
 		const float Wag = FMath::Sin(SwimPhase) * 18.f;
 		TailMesh->SetRelativeRotation(FRotator(0.f, 180.f + Wag, 0.f));

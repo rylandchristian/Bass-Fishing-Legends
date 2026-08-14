@@ -1,14 +1,18 @@
 #include "Player/BFLBoatPawn.h"
 
+#include "Animation/AnimationAsset.h"
 #include "Camera/CameraComponent.h"
 #include "CableComponent.h"
 #include "Components/BoxComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/SkeletalMesh.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Fishing/BFLFishingComponent.h"
+#include "Game/BFLAssignedMesh.h"
 #include "Game/BFLGameSettings.h"
 #include "Game/BFLPlayerController.h"
 #include "Game/BFLStatics.h"
@@ -47,11 +51,23 @@ ABFLBoatPawn::ABFLBoatPawn()
 	RodMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RodMesh->SetRelativeLocation(FVector(50.f, 18.f, 20.f));
 	RodMesh->SetRelativeRotation(FRotator(35.f, 12.f, 0.f));
-	RodMesh->SetRelativeScale3D(FVector(0.06f, 0.06f, 1.4f));
+	RodMesh->SetRelativeScale3D(FVector(0.045f, 0.045f, 1.55f));
+
+	RodGripMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RodGrip"));
+	RodGripMesh->SetupAttachment(RodMesh);
+	RodGripMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	RodGripMesh->SetRelativeLocation(FVector(0.f, 0.f, -42.f));
+	RodGripMesh->SetRelativeScale3D(FVector(1.8f, 1.8f, 0.22f));
+
+	AnglerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Angler"));
+	AnglerMesh->SetupAttachment(RootComponent);
+	AnglerMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AnglerMesh->SetRelativeLocation(FVector(12.f, 6.f, -18.f));
+	AnglerMesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 
 	RodTip = CreateDefaultSubobject<USceneComponent>(TEXT("RodTip"));
 	RodTip->SetupAttachment(RodMesh);
-	RodTip->SetRelativeLocation(FVector(0.f, 0.f, 55.f));
+	RodTip->SetRelativeLocation(FVector(0.f, 0.f, 58.f));
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(RootComponent);
@@ -329,30 +345,155 @@ void ABFLBoatPawn::BuildDefaultMappings(UInputMappingContext* IMC)
 	IMC->MapKey(CancelAction, EKeys::F);
 }
 
+void ABFLBoatPawn::LoadAuthoredMeshes()
+{
+	const UBFLGameSettings* Settings = UBFLGameSettings::Get();
+	if (!Settings)
+	{
+		return;
+	}
+
+	if (HullMesh)
+	{
+		if (UStaticMesh* Hull = Settings->BoatHullMesh.LoadSynchronous())
+		{
+			UStaticMesh* Current = HullMesh->GetStaticMesh();
+			HullMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Hull));
+		}
+	}
+	if (RodMesh)
+	{
+		if (UStaticMesh* Rod = Settings->RodMesh.LoadSynchronous())
+		{
+			UStaticMesh* Current = RodMesh->GetStaticMesh();
+			RodMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Rod));
+		}
+	}
+	if (AnglerMesh)
+	{
+		if (USkeletalMesh* Angler = Settings->AnglerMesh.LoadSynchronous())
+		{
+			AnglerMesh->SetSkeletalMesh(BFLAssignedMesh::Keep(AnglerMesh->GetSkeletalMeshAsset(), Angler));
+		}
+		if (UAnimationAsset* Pose = Settings->AnglerPose.LoadSynchronous())
+		{
+			if (AnglerMesh->GetSkeletalMeshAsset())
+			{
+				AnglerMesh->PlayAnimation(Pose, true);
+			}
+		}
+	}
+}
+
+void ABFLBoatPawn::AttachRodToAngler()
+{
+	if (!RodMesh || !AnglerMesh || !AnglerMesh->GetSkeletalMeshAsset())
+	{
+		return;
+	}
+
+	const FName Socket = AnglerHandSocket.IsNone() ? FName(TEXT("hand_r")) : AnglerHandSocket;
+	const bool bHasAttach = AnglerMesh->DoesSocketExist(Socket) || AnglerMesh->GetBoneIndex(Socket) != INDEX_NONE;
+	RodMesh->AttachToComponent(
+		AnglerMesh,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		bHasAttach ? Socket : NAME_None);
+	RodMesh->SetRelativeLocation(RodInHandLocation);
+	RodMesh->SetRelativeRotation(RodInHandRotation);
+}
+
 void ABFLBoatPawn::ApplyPlaceholderMeshes()
 {
+	LoadAuthoredMeshes();
+
+	UStaticMesh* const HullBefore = HullMesh ? HullMesh->GetStaticMesh() : nullptr;
+	UStaticMesh* const RodBefore = RodMesh ? RodMesh->GetStaticMesh() : nullptr;
+
 	if (UStaticMesh* Cube = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Cube.Cube")))
 	{
-		HullMesh->SetStaticMesh(Cube);
-		CabinMesh->SetStaticMesh(Cube);
+		if (HullMesh)
+		{
+			UStaticMesh* Current = HullMesh->GetStaticMesh();
+			HullMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Cube));
+		}
 	}
 	if (UStaticMesh* Cylinder = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder")))
 	{
-		RodMesh->SetStaticMesh(Cylinder);
+		if (RodMesh)
+		{
+			UStaticMesh* Current = RodMesh->GetStaticMesh();
+			RodMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Cylinder));
+		}
+		if (RodGripMesh && !RodBefore)
+		{
+			UStaticMesh* Current = RodGripMesh->GetStaticMesh();
+			RodGripMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Cylinder));
+		}
 	}
 
-	if (UMaterialInstanceDynamic* HullMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.12f, 0.22f, 0.38f)))
+	if (HullBefore && HullMesh)
 	{
-		HullMesh->SetMaterial(0, HullMat);
+		HullMesh->SetRelativeScale3D(FVector(1.f));
+		HullMesh->SetRelativeLocation(FVector::ZeroVector);
 	}
-	if (UMaterialInstanceDynamic* CabinMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.82f, 0.82f, 0.78f)))
+	else if (HullMesh)
 	{
-		CabinMesh->SetMaterial(0, CabinMat);
+		if (UMaterialInstanceDynamic* HullMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.12f, 0.22f, 0.38f)))
+		{
+			HullMesh->SetMaterial(0, HullMat);
+		}
 	}
-	if (UMaterialInstanceDynamic* RodMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.15f, 0.15f, 0.16f)))
+
+	if (RodBefore && RodMesh)
 	{
-		RodMesh->SetMaterial(0, RodMat);
+		RodMesh->SetRelativeScale3D(FVector(1.f));
 	}
+	if (!RodBefore && RodMesh)
+	{
+		if (UMaterialInstanceDynamic* RodMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.15f, 0.15f, 0.16f)))
+		{
+			RodMesh->SetMaterial(0, RodMat);
+		}
+		if (RodGripMesh)
+		{
+			if (UMaterialInstanceDynamic* GripMat = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.28f, 0.18f, 0.10f)))
+			{
+				RodGripMesh->SetMaterial(0, GripMat);
+			}
+		}
+	}
+	else if (RodGripMesh)
+	{
+		RodGripMesh->SetVisibility(false);
+		RodGripMesh->SetHiddenInGame(true);
+		RodGripMesh->SetStaticMesh(nullptr);
+	}
+
+	if (CabinMesh)
+	{
+		CabinMesh->SetVisibility(false);
+		CabinMesh->SetHiddenInGame(true);
+		CabinMesh->SetStaticMesh(nullptr);
+	}
+
+	if (HullMesh)
+	{
+		HullMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (RodMesh)
+	{
+		RodMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (RodGripMesh)
+	{
+		RodGripMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	if (AnglerMesh)
+	{
+		AnglerMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	AttachRodToAngler();
 }
 
 void ABFLBoatPawn::DrawCastPreview() const

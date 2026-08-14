@@ -47,3 +47,21 @@ _Avoid_: fail, break (when we mean this outcome)
 **Score**:
 Points from a catch: weight times that species' points per pound.
 _Avoid_: XP, rating
+
+## World
+
+**Boat**:
+The small jon boat the player drives and possesses.
+_Avoid_: pawn (when we mean the vessel), vehicle, bass boat (when we mean this vessel)
+
+**Angler**:
+The visible person on the boat. The player does not possess the Angler.
+_Avoid_: person, character, player, avatar
+
+**Rod**:
+The fishing rod the Angler holds. A charge-cast starts from its tip.
+_Avoid_: stick, pole (when we mean this object)
+
+**Lake**:
+The single playable body of water and the shore around it.
+_Avoid_: map, level, world (when we mean this place)

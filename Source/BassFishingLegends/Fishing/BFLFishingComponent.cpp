@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "Fish/BFLFishActor.h"
 #include "Fishing/BFLBaitActor.h"
+#include "Fishing/BFLCastOrigin.h"
 #include "Fishing/BFLCastProjectile.h"
 #include "Game/BFLGameMode.h"
 #include "Game/BFLGameSettings.h"
@@ -424,19 +425,29 @@ void UBFLFishingComponent::SnapLine()
 
 FVector UBFLFishingComponent::GetCastStart() const
 {
+	FVector TipLoc = FVector::ZeroVector;
+	const FVector* Tip = nullptr;
 	if (RodTip)
 	{
-		return RodTip->GetComponentLocation();
+		TipLoc = RodTip->GetComponentLocation();
+		Tip = &TipLoc;
 	}
+
+	FVector OverrideLoc = FVector::ZeroVector;
+	const FVector* Override = nullptr;
 	if (CastOriginOverride)
 	{
-		return CastOriginOverride->GetComponentLocation();
+		OverrideLoc = CastOriginOverride->GetComponentLocation();
+		Override = &OverrideLoc;
 	}
+
+	FVector Fallback = FVector::ZeroVector;
 	if (const AActor* OwnerActor = GetOwner())
 	{
-		return OwnerActor->GetActorLocation() + OwnerActor->GetActorForwardVector() * 80.f + FVector(0.f, 0.f, 80.f);
+		Fallback = OwnerActor->GetActorLocation() + OwnerActor->GetActorForwardVector() * 80.f + FVector(0.f, 0.f, 80.f);
 	}
-	return FVector::ZeroVector;
+
+	return BFLCastOrigin::Resolve(Tip, Override, Fallback);
 }
 
 FVector UBFLFishingComponent::GetCastDirection() const

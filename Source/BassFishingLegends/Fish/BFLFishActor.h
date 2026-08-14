@@ -82,6 +82,7 @@ protected:
 	ABFLBaitActor* FindBait() const;
 	void TryCommitBite(ABFLBaitActor* Bait);
 	void ApplyVisuals();
+	void ApplyPlaceholderMeshes();
 
 	FVector WanderTarget = FVector::ZeroVector;
 	FVector FightCenter = FVector::ZeroVector;
@@ -92,4 +93,5 @@ protected:
 	float SwimPhase = 0.f;
 	float FightAngle = 0.f;
 	float PreferredDepth = -70.f;
+	bool bHasAuthoredBodyMesh = false;
 };

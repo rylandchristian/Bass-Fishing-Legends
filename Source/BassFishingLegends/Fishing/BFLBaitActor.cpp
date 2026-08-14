@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Fish/BFLFishActor.h"
+#include "Game/BFLAssignedMesh.h"
 #include "Game/BFLGameMode.h"
 #include "Game/BFLStatics.h"
 
@@ -34,21 +35,37 @@ void ABFLBaitActor::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UStaticMesh* const BobberBefore = BobberMesh ? BobberMesh->GetStaticMesh() : nullptr;
+	UStaticMesh* const HookBefore = HookMesh ? HookMesh->GetStaticMesh() : nullptr;
 	if (UStaticMesh* Sphere = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere")))
 	{
-		BobberMesh->SetStaticMesh(Sphere);
+		if (BobberMesh)
+		{
+			UStaticMesh* Current = BobberMesh->GetStaticMesh();
+			BobberMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Sphere));
+		}
 	}
 	if (UStaticMesh* Cone = UBFLStatics::GetEngineMesh(TEXT("/Engine/BasicShapes/Cone.Cone")))
 	{
-		HookMesh->SetStaticMesh(Cone);
+		if (HookMesh)
+		{
+			UStaticMesh* Current = HookMesh->GetStaticMesh();
+			HookMesh->SetStaticMesh(BFLAssignedMesh::Keep(Current, Cone));
+		}
 	}
-	if (UMaterialInstanceDynamic* Red = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.85f, 0.08f, 0.08f)))
+	if (!BobberBefore && BobberMesh)
 	{
-		BobberMesh->SetMaterial(0, Red);
+		if (UMaterialInstanceDynamic* Red = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.85f, 0.08f, 0.08f)))
+		{
+			BobberMesh->SetMaterial(0, Red);
+		}
 	}
-	if (UMaterialInstanceDynamic* White = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.9f, 0.9f, 0.85f)))
+	if (!HookBefore && HookMesh)
 	{
-		HookMesh->SetMaterial(0, White);
+		if (UMaterialInstanceDynamic* White = UBFLStatics::MakeTintedMeshMaterial(this, FLinearColor(0.9f, 0.9f, 0.85f)))
+		{
+			HookMesh->SetMaterial(0, White);
+		}
 	}
 
 	BobPhase = FMath::FRand() * PI * 2.f;

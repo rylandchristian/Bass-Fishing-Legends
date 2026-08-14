@@ -86,7 +86,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BFL|Lake")
 	bool bAutoBuildLake = true;
 
-	/** Skip auto-build if a designer already placed a lake plane named WaterSurface. */
+	/** Skip auto-build if a WaterSurface tag or Water Body is already in the map. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BFL|Lake")
 	bool bSkipBuildIfWaterExists = true;
 
@@ -110,6 +110,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BFL|Fish")
 	TObjectPtr<UBFLFishCatalog> FishCatalog;
+
+	/** Optional Blueprint fish that already carries the largemouth mesh. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BFL|Fish")
+	TSubclassOf<ABFLFishActor> FishClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BFL|World")
 	bool bSpawnDayNight = true;

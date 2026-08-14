@@ -2,8 +2,11 @@
 
 #include "BassFishingLegends.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Components/ExponentialHeightFogComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkyAtmosphereComponent.h"
 #include "Engine/DirectionalLight.h"
+#include "Engine/ExponentialHeightFog.h"
 #include "Engine/SkyLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
@@ -18,6 +21,7 @@
 #include "Player/BFLBoatPawn.h"
 #include "UI/BFLHUD.h"
 #include "World/BFLDayNightActor.h"
+#include "World/BFLLakePresence.h"
 
 ABFLGameMode::ABFLGameMode()
 {
@@ -47,27 +51,27 @@ void ABFLGameMode::InitGame(const FString& MapName, const FString& Options, FStr
 
 void ABFLGameMode::StartPlay()
 {
-	if (bAutoBuildLake)
+	if (bAutoBuildLake && GetWorld())
 	{
-		bool bWaterExists = false;
-		if (bSkipBuildIfWaterExists && GetWorld())
+		TArray<FBFLPlacedActor> Placed;
+		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 		{
-			for (TActorIterator<AActor> It(GetWorld()); It; ++It)
-			{
-				if (It->ActorHasTag(FName(TEXT("WaterSurface")))
-					|| It->ActorHasTag(FName(TEXT("BFL_Generated")))
-					|| It->GetName().Contains(TEXT("WaterSurface")))
-				{
-					bWaterExists = true;
-					LakeCenter = It->GetActorLocation();
-					LakeCenter.Z = 0.f;
-					WaterHeight = It->GetActorLocation().Z;
-					break;
-				}
-			}
+			FBFLPlacedActor Hint;
+			Hint.Tags = It->Tags;
+			Hint.Name = It->GetName();
+			Hint.ClassName = It->GetClass() ? It->GetClass()->GetName() : FString();
+			Hint.Location = It->GetActorLocation();
+			Placed.Add(MoveTemp(Hint));
 		}
 
-		if (!bWaterExists)
+		const FBFLLakeLayout Layout = BFLLakePresence::Resolve(Placed, LakeCenter, WaterHeight);
+		if (Layout.bHasWaterSurface)
+		{
+			LakeCenter = Layout.Center;
+			WaterHeight = Layout.WaterHeight;
+		}
+
+		if (BFLLakePresence::ShouldAutoBuild(Placed, bSkipBuildIfWaterExists))
 		{
 			BuildDefaultLake();
 		}
@@ -186,7 +190,8 @@ ABFLFishActor* ABFLGameMode::SpawnFish(EFishSpecies Species, FVector Location)
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	ABFLFishActor* Fish = GetWorld()->SpawnActor<ABFLFishActor>(ABFLFishActor::StaticClass(), Location, FRotator::ZeroRotator, Params);
+	UClass* ClassToSpawn = FishClass ? *FishClass : ABFLFishActor::StaticClass();
+	ABFLFishActor* Fish = GetWorld()->SpawnActor<ABFLFishActor>(ClassToSpawn, Location, FRotator::ZeroRotator, Params);
 	if (Fish)
 	{
 		Fish->InitializeSpecies(GetSpeciesDef(Species));
@@ -428,6 +433,39 @@ void ABFLGameMode::EnsureLighting()
 		FActorSpawnParameters Params;
 		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		World->SpawnActor<ASkyLight>(ASkyLight::StaticClass(), FVector(0.f, 0.f, 300.f), FRotator::ZeroRotator, Params);
+	}
+
+	bool bHasAtmosphere = false;
+	if (TActorIterator<ASkyAtmosphere> It(World); It)
+	{
+		bHasAtmosphere = true;
+	}
+	if (!bHasAtmosphere)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		World->SpawnActor<ASkyAtmosphere>(ASkyAtmosphere::StaticClass(), FVector(0.f, 0.f, 0.f), FRotator::ZeroRotator, Params);
+	}
+
+	bool bHasFog = false;
+	if (TActorIterator<AExponentialHeightFog> It(World); It)
+	{
+		bHasFog = true;
+	}
+	if (!bHasFog)
+	{
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		AExponentialHeightFog* Fog = World->SpawnActor<AExponentialHeightFog>(
+			AExponentialHeightFog::StaticClass(),
+			FVector(0.f, 0.f, 0.f),
+			FRotator::ZeroRotator,
+			Params);
+		if (Fog && Fog->GetComponent())
+		{
+			Fog->GetComponent()->SetFogDensity(0.018f);
+			Fog->GetComponent()->SetFogHeightFalloff(0.2f);
+		}
 	}
 }
 

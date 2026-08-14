@@ -1,7 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Animation/AnimationAsset.h"
 #include "Engine/DeveloperSettings.h"
+#include "Engine/SkeletalMesh.h"
+#include "Engine/StaticMesh.h"
 #include "BFLGameSettings.generated.h"
 
 /**
@@ -49,4 +52,24 @@ public:
 	/** Real-world minutes for a full 24-hour cycle. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "World", meta = (ClampMin = "1.0"))
 	float DayLengthMinutes = 12.f;
+
+	/** Optional authored jon-boat hull. Leave empty to keep the placeholder box. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Look")
+	TSoftObjectPtr<UStaticMesh> BoatHullMesh;
+
+	/** Optional authored Rod. Leave empty for the two-piece editor mesh. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Look")
+	TSoftObjectPtr<UStaticMesh> RodMesh;
+
+	/** Optional UE5-skeleton Angler. Leave empty to hide the Angler. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Look")
+	TSoftObjectPtr<USkeletalMesh> AnglerMesh;
+
+	/** Optional posed still. Played as a looping single-node clip. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Look")
+	TSoftObjectPtr<UAnimationAsset> AnglerPose;
+
+	/** Optional largemouth body. Leave empty to keep the sphere-and-cone fish. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Look")
+	TSoftObjectPtr<UStaticMesh> FishBodyMesh;
 };
