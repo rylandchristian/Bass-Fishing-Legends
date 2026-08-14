@@ -26,7 +26,7 @@
 		},
 		{
 			"Name": "Niagara",
-			"Enabled": false
+			"Enabled": true
 		},
 		{
 			"Name": "NiagaraSimCaching",
@@ -39,6 +39,14 @@
 		{
 			"Name": "NiagaraInsights",
 			"Enabled": false
+		},
+		{
+			"Name": "Water",
+			"Enabled": true
+		},
+		{
+			"Name": "Landmass",
+			"Enabled": true
 		},
 		{
 			"Name": "ModelingToolsEditorMode",

@@ -3,6 +3,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Fish/BFLFishCatalog.h"
+#include "Fish/BFLFishLook.h"
 #include "Fishing/BFLBaitActor.h"
 #include "Fishing/BFLFishingComponent.h"
 #include "Game/BFLAssignedMesh.h"
@@ -71,7 +72,7 @@ void ABFLFishActor::ApplyPlaceholderMeshes()
 		return;
 	}
 
-	if (TailMesh)
+	if (TailMesh && !BFLFishLook::ShouldShowTail(bHasAuthoredBodyMesh))
 	{
 		TailMesh->SetVisibility(false);
 		TailMesh->SetHiddenInGame(true);
@@ -130,16 +131,31 @@ void ABFLFishActor::ApplyVisuals()
 	SetActorScale3D(FVector(Size));
 	if (BodyMesh)
 	{
-		BodyMesh->SetRelativeScale3D(SpeciesDef.MeshScale);
-		if (!bHasAuthoredBodyMesh)
+		BodyMesh->SetRelativeScale3D(BFLFishLook::BodyMeshScale(bHasAuthoredBodyMesh, SpeciesDef.MeshScale));
+		if (bHasAuthoredBodyMesh)
 		{
-			if (UMaterialInstanceDynamic* BodyMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.Color))
+			const int32 NumSlots = BodyMesh->GetNumMaterials();
+			for (int32 Slot = 0; Slot < NumSlots; ++Slot)
 			{
-				BodyMesh->SetMaterial(0, BodyMat);
+				if (!BodyMesh->GetMaterial(Slot))
+				{
+					continue;
+				}
+				if (UMaterialInstanceDynamic* Mid = BodyMesh->CreateAndSetMaterialInstanceDynamic(Slot))
+				{
+					// Multiply/tint params only. Do not write BaseColor — that flattens stylized-PBR paint.
+					Mid->SetVectorParameterValue(TEXT("Tint"), SpeciesDef.Color);
+					Mid->SetVectorParameterValue(TEXT("Color"), SpeciesDef.Color);
+					Mid->SetVectorParameterValue(TEXT("TintColor"), SpeciesDef.Color);
+				}
 			}
 		}
+		else if (UMaterialInstanceDynamic* BodyMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.Color))
+		{
+			BodyMesh->SetMaterial(0, BodyMat);
+		}
 	}
-	if (TailMesh && TailMesh->GetStaticMesh() && !bHasAuthoredBodyMesh)
+	if (TailMesh && TailMesh->GetStaticMesh() && BFLFishLook::ShouldShowTail(bHasAuthoredBodyMesh))
 	{
 		if (UMaterialInstanceDynamic* TailMat = UBFLStatics::MakeTintedMeshMaterial(this, SpeciesDef.BellyColor))
 		{
