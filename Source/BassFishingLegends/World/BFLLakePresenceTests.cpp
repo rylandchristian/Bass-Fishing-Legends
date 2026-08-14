@@ -103,6 +103,28 @@ bool FBFLLake_TaggedWaterSetsHeightFromActorZ::RunTest(const FString& Parameters
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBFLLake_IslandIsNotTheWaterSurface,
+	"BFL.Look.IslandIsNotTheWaterSurface",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FBFLLake_IslandIsNotTheWaterSurface::RunTest(const FString& Parameters)
+{
+	TArray<FBFLPlacedActor> Actors;
+	Actors.Add(MakeActor(TEXT("WaterBodyIsland_0"), NAME_None, FVector(1575.f, -900.f, 0.f), TEXT("WaterBodyIsland")));
+	Actors.Add(MakeActor(TEXT("WaterBodyLake_0"), FName(TEXT("WaterSurface")), FVector(0.f, 0.f, 0.f), TEXT("WaterBodyLake")));
+
+	TestTrue(TEXT("An island alone still auto-builds"), BFLLakePresence::ShouldAutoBuild(
+		TArray<FBFLPlacedActor>{ Actors[0] }, true));
+	TestFalse(TEXT("A Water Body Lake still skips primitives"), BFLLakePresence::ShouldAutoBuild(Actors, true));
+
+	const FBFLLakeLayout Layout = BFLLakePresence::Resolve(Actors, FVector::ZeroVector, 0.f);
+	TestTrue(TEXT("Found the water surface"), Layout.bHasWaterSurface);
+	TestTrue(TEXT("Lake center stays on the Water Body, not the island"), FMath::IsNearlyEqual(Layout.Center.X, 0.0));
+	TestTrue(TEXT("Lake center Y stays on the Water Body"), FMath::IsNearlyEqual(Layout.Center.Y, 0.0));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBFLLake_GeneratedPropsDoNotMoveWaterHeight,
 	"BFL.Look.GeneratedPropsDoNotMoveWaterHeight",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)

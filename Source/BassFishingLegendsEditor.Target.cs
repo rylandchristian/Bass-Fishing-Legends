@@ -11,7 +11,10 @@ public class BassFishingLegendsEditorTarget : TargetRules
 		ExtraModuleNames.Add("BassFishingLegends");
 
 		// This Linux 5.8.1 drop lists these plugins but does not ship their modules.
-		DisablePlugins.Add("PythonScriptPlugin");
-		DisablePlugins.Add("PlatformCrypto");
+		if (Target.Platform == UnrealTargetPlatform.Linux)
+		{
+			DisablePlugins.Add("PythonScriptPlugin");
+			DisablePlugins.Add("PlatformCrypto");
+		}
 	}
 }

@@ -31,6 +31,12 @@ namespace BFLLakePresence
 
 	inline bool IsWaterSurface(const FBFLPlacedActor& Actor)
 	{
+		// An island sits in the Lake. It is not the water surface and must not
+		// move the Z-plane center.
+		if (Actor.ClassName.Contains(TEXT("WaterBodyIsland")) || Actor.Name.Contains(TEXT("WaterBodyIsland")))
+		{
+			return false;
+		}
 		if (HasTag(Actor, FName(TEXT("WaterSurface"))))
 		{
 			return true;
