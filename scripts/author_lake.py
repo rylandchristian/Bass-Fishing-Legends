@@ -30,6 +30,20 @@ GRID_STEP = 64.0
 MAP_PATH = "/Game/Maps/Lake"
 MESH_PATH = "/Game/Meshes/SM_LakeBasin"
 
+# WaterBodyLakeActorFactory / WaterZoneActorFactory assign these. spawn_actor_from_class
+# skips the factory, so Water Info never captures and the surface stays invisible.
+WATER_INFO_MATERIAL = "/Water/Materials/WaterInfo/DrawWaterInfo.DrawWaterInfo"
+LAKE_WATER_MATERIAL = "/Water/Materials/WaterSurface/Water_Material_Lake.Water_Material_Lake"
+LAKE_STATIC_MESH_MATERIAL = "/Water/Materials/WaterSurface/LODs/Water_Material_Lake_LOD.Water_Material_Lake_LOD"
+LAKE_UNDERWATER_MATERIAL = (
+    "/Water/Materials/PostProcessing/M_UnderWater_PostProcess_Volume."
+    "M_UnderWater_PostProcess_Volume"
+)
+LAKE_WAVES = "/Water/Waves/GerstnerWaves_Lake.GerstnerWaves_Lake"
+FAR_MESH_MATERIAL = "/Water/Materials/WaterSurface/Water_FarMesh.Water_FarMesh"
+FAR_MESH_EXTENT = 4000000.0
+WATER_INFO_RESOLUTION = (1024, 1024)
+
 
 def height_at(x: float, y: float) -> float:
     island_dx = x - ISLAND_CENTER[0]
@@ -195,6 +209,80 @@ def set_spline(spline, points) -> None:
         spline.k2_synchronize_and_broadcast_data_change()
 
 
+def load_water_asset(path: str):
+    asset = unreal.EditorAssetLibrary.load_asset(path)
+    if not asset:
+        raise RuntimeError(f"Could not load Water plugin asset {path}")
+    return asset
+
+
+def apply_water_zone_defaults(zone) -> None:
+    """Same as WaterZoneActorFactory so Water Info has a capture target."""
+    mesh = zone.root_component
+    if mesh and hasattr(mesh, "set_editor_property"):
+        mesh.set_editor_property("far_distance_material", load_water_asset(FAR_MESH_MATERIAL))
+        mesh.set_editor_property("far_distance_mesh_extent", FAR_MESH_EXTENT)
+    resolution = unreal.IntPoint(WATER_INFO_RESOLUTION[0], WATER_INFO_RESOLUTION[1])
+    if hasattr(zone, "set_render_target_resolution"):
+        zone.set_render_target_resolution(resolution)
+    else:
+        zone.set_editor_property("render_target_resolution", resolution)
+
+
+def assign_lake_waves(water) -> None:
+    """Attach the default lake Gerstner asset. The reference type is not always exported."""
+    if not hasattr(water, "set_water_waves"):
+        return
+    if hasattr(water, "get_water_waves") and water.get_water_waves():
+        return
+
+    waves_asset = load_water_asset(LAKE_WAVES)
+    ref_cls = getattr(unreal, "WaterWavesAssetReference", None)
+    if ref_cls is not None:
+        ref = unreal.new_object(ref_cls, water, "LakeWaterWaves")
+        ref.set_editor_property("water_waves_asset", waves_asset)
+        water.set_water_waves(ref)
+        return
+
+    gerstner_cls = getattr(unreal, "GerstnerWaterWaves", None)
+    if gerstner_cls is not None:
+        water.set_water_waves(unreal.new_object(gerstner_cls, water, "LakeWaterWaves"))
+        return
+
+    unreal.log_warning("Could not attach default lake waves; Water Info material still applies")
+
+
+def apply_lake_visual_defaults(water) -> None:
+    """Same as WaterBodyLakeActorFactory: default lake look + Water Info material."""
+    body = water.get_water_body_component()
+    body.set_water_material(load_water_asset(LAKE_WATER_MATERIAL))
+    body.set_water_info_material(load_water_asset(WATER_INFO_MATERIAL))
+    body.set_water_static_mesh_material(load_water_asset(LAKE_STATIC_MESH_MATERIAL))
+    body.set_underwater_post_process_material(load_water_asset(LAKE_UNDERWATER_MATERIAL))
+    assign_lake_waves(water)
+
+
+def bind_water_zone_and_capture(zone, water) -> None:
+    """Register the Water Body with the zone and enqueue a Water Info capture."""
+    body = water.get_water_body_component()
+    if hasattr(body, "set_water_zone_override"):
+        body.set_water_zone_override(zone)
+    if hasattr(zone, "force_update_water_info_texture"):
+        zone.force_update_water_info_texture()
+    unreal.SystemLibrary.execute_console_command(
+        None, "r.Water.WaterInfo.ForceUpdateWaterInfoNextFrames 3"
+    )
+
+
+def assert_water_info_ready(water) -> None:
+    body = water.get_water_body_component()
+    if not body.get_water_material():
+        raise RuntimeError("Water Body Lake has no water material")
+    info = body.get_editor_property("water_info_material")
+    if not info:
+        raise RuntimeError("Water Body Lake has no Water Info material")
+
+
 def disable_water_collision(water_actor) -> None:
     body = water_actor.get_water_body_component()
     if not body:
@@ -218,16 +306,20 @@ def author_level(mesh, bank_mat, bed_mat) -> None:
 
     zone = actor_sys.spawn_actor_from_class(unreal.WaterZone, unreal.Vector(0.0, 0.0, 0.0), unreal.Rotator())
     zone.set_actor_label("WaterZone")
+    apply_water_zone_defaults(zone)
     zone.set_editor_property("zone_extent", unreal.Vector2D(14000.0, 14000.0))
 
     water = actor_sys.spawn_actor_from_class(unreal.WaterBodyLake, unreal.Vector(0.0, 0.0, WATER_HEIGHT), unreal.Rotator())
     water.set_actor_label("WaterBodyLake")
+    apply_lake_visual_defaults(water)
     tags = list(water.tags)
     if "WaterSurface" not in tags:
         tags.append("WaterSurface")
     water.tags = tags
     set_spline(water.get_water_spline(), to_water_vectors(water_points()))
     disable_water_collision(water)
+    bind_water_zone_and_capture(zone, water)
+    assert_water_info_ready(water)
 
     island = actor_sys.spawn_actor_from_class(
         unreal.WaterBodyIsland,
