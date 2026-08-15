@@ -33,5 +33,12 @@ public class BassFishingLegends : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
 		});
+
+		// Editor automation loads the authored Lake. The game module still does
+		// not depend on the Water plugin — the test walks class names.
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd");
+		}
 	}
 }
