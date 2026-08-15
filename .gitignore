@@ -29,6 +29,7 @@ Linux/
 # Python venv (not part of the game)
 venv/
 .venv/
+scripts/__pycache__/
 
 # Crash dumps
 *.dmp

@@ -65,3 +65,15 @@ _Avoid_: stick, pole (when we mean this object)
 **Lake**:
 The single playable body of water and the shore around it.
 _Avoid_: map, level, world (when we mean this place)
+
+**Basin**:
+The sculpted bed and banks that hold the Lake's water.
+_Avoid_: terrain, landscape (when we mean this)
+
+**Bank**:
+Where the Basin rises out of the water.
+_Avoid_: beach, coast, shoreline (when we mean this edge)
+
+**Water surface**:
+The visible water that fills the Basin to the banks.
+_Avoid_: ocean, pool, water plane (when we mean this surface)

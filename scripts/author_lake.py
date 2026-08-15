@@ -10,30 +10,25 @@ import math
 import os
 import sys
 
+# ExecutePythonScript does not put this file's directory on sys.path.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from lake_waterline import (
+    ISLAND_CENTER,
+    WATER_HEIGHT,
+    island_cutout_points,
+    island_radius,
+    shore_radius,
+    water_points,
+)
+
 import unreal
 
 
-LAKE_RADIUS = 4500.0
-ISLAND_CENTER = (1575.0, -900.0)
-ISLAND_RADIUS = 620.0
 MAP_HALF = 6400.0
 GRID_STEP = 64.0
-WATER_Z = 0.0
 MAP_PATH = "/Game/Maps/Lake"
 MESH_PATH = "/Game/Meshes/SM_LakeBasin"
-
-
-def shore_radius(angle: float) -> float:
-    return (
-        LAKE_RADIUS
-        + 380.0 * math.sin(3.0 * angle)
-        + 220.0 * math.cos(5.0 * angle)
-        + 140.0 * math.sin(7.0 * angle + 0.6)
-    )
-
-
-def island_radius(angle: float) -> float:
-    return ISLAND_RADIUS * (0.82 + 0.18 * math.sin(2.0 * angle + 0.4))
 
 
 def height_at(x: float, y: float) -> float:
@@ -65,28 +60,8 @@ def height_at(x: float, y: float) -> float:
     return bed
 
 
-def shore_points(count: int, scale: float = 0.985) -> list[unreal.Vector]:
-    points: list[unreal.Vector] = []
-    for i in range(count):
-        angle = (2.0 * math.pi * i) / count
-        radius = shore_radius(angle) * scale
-        points.append(unreal.Vector(math.cos(angle) * radius, math.sin(angle) * radius, WATER_Z))
-    return points
-
-
-def island_points(count: int, scale: float = 0.92) -> list[unreal.Vector]:
-    points: list[unreal.Vector] = []
-    for i in range(count):
-        angle = (2.0 * math.pi * i) / count
-        radius = island_radius(angle) * scale
-        points.append(
-            unreal.Vector(
-                ISLAND_CENTER[0] + math.cos(angle) * radius,
-                ISLAND_CENTER[1] + math.sin(angle) * radius,
-                WATER_Z,
-            )
-        )
-    return points
+def to_water_vectors(points: list[tuple[float, float]]) -> list[unreal.Vector]:
+    return [unreal.Vector(x, y, WATER_HEIGHT) for x, y in points]
 
 
 def write_basin_obj(path: str) -> None:
@@ -245,25 +220,26 @@ def author_level(mesh, bank_mat, bed_mat) -> None:
     zone.set_actor_label("WaterZone")
     zone.set_editor_property("zone_extent", unreal.Vector2D(14000.0, 14000.0))
 
-    water = actor_sys.spawn_actor_from_class(unreal.WaterBodyLake, unreal.Vector(0.0, 0.0, WATER_Z), unreal.Rotator())
+    water = actor_sys.spawn_actor_from_class(unreal.WaterBodyLake, unreal.Vector(0.0, 0.0, WATER_HEIGHT), unreal.Rotator())
     water.set_actor_label("WaterBodyLake")
     tags = list(water.tags)
     if "WaterSurface" not in tags:
         tags.append("WaterSurface")
     water.tags = tags
-    set_spline(water.get_water_spline(), shore_points(36))
+    set_spline(water.get_water_spline(), to_water_vectors(water_points()))
     disable_water_collision(water)
 
     island = actor_sys.spawn_actor_from_class(
         unreal.WaterBodyIsland,
-        unreal.Vector(ISLAND_CENTER[0], ISLAND_CENTER[1], WATER_Z),
+        unreal.Vector(ISLAND_CENTER[0], ISLAND_CENTER[1], WATER_HEIGHT),
         unreal.Rotator(),
     )
     island.set_actor_label("WaterBodyIsland")
-    # Points are world-space around the island; actor is already at the island center,
+    # Points are lake-space around the island; actor is already at the island center,
     # so feed local offsets.
     local_island = [
-        unreal.Vector(p.x - ISLAND_CENTER[0], p.y - ISLAND_CENTER[1], 0.0) for p in island_points(16)
+        unreal.Vector(x - ISLAND_CENTER[0], y - ISLAND_CENTER[1], 0.0)
+        for x, y in island_cutout_points()
     ]
     set_spline(island.get_water_spline(), local_island)
 
@@ -278,7 +254,7 @@ def author_level(mesh, bank_mat, bed_mat) -> None:
 
     start = actor_sys.spawn_actor_from_class(
         unreal.PlayerStart,
-        unreal.Vector(0.0, 0.0, WATER_Z + 40.0),
+        unreal.Vector(0.0, 0.0, WATER_HEIGHT + 40.0),
         unreal.Rotator(0.0, 0.0, 0.0),
     )
     start.set_actor_label("PlayerStart")
