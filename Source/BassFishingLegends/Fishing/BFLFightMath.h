@@ -5,11 +5,14 @@
 /**
  * One tick of a fight: tension, reel, land, or snap.
  * Pure math — no world, no actors. TickFighting and tests call the same step.
+ *
+ * Pump: reel while tension is not red; ease off in red. Reeling in red
+ * still adds overreel tension, but does not advance reel.
  */
 struct FBFLFightRates
 {
 	/** Tension added per second while reeling (on top of the fish's pull). */
-	float ReelTensionRate = 0.16f;
+	float ReelTensionRate = 0.28f;
 
 	/** Tension removed per second while easing off. */
 	float TensionDecayRate = 0.30f;
@@ -22,7 +25,7 @@ struct FBFLFightRates
 	/** Yellow band starts here. Reel through this. */
 	float YellowTension = 0.55f;
 
-	/** Red band / overreel starts here. Ease off. */
+	/** Red band / overreel starts here. Ease off. Reel does not advance here. */
 	float RedTension = 0.78f;
 
 	/** How hard the fish's pull becomes tension. */
@@ -31,8 +34,8 @@ struct FBFLFightRates
 	/** Reel lost per second while easing off (slow leak). */
 	float ReelLeakRate = 0.015f;
 
-	/** Scales reel gained while reeling. Higher = faster land. */
-	float ReelGainScale = 1.85f;
+	/** Scales reel gained while reeling in green/yellow. Higher = faster land. */
+	float ReelGainScale = 2.4f;
 
 	float StartTension = 0.22f;
 };
@@ -90,12 +93,15 @@ namespace BFLFightMath
 
 		if (bReeling)
 		{
-			const float Efficiency = FMath::Clamp(1.15f - State.Tension * 0.85f, 0.25f, 1.f);
-			const float Need = FMath::Max(StaminaSeconds, 1.f);
-			State.Reel = FMath::Clamp(
-				State.Reel + (Efficiency * Rates.ReelGainScale * DeltaTime) / Need,
-				0.f,
-				1.f);
+			if (State.Tension < Rates.RedTension)
+			{
+				const float Efficiency = FMath::Clamp(1.15f - State.Tension * 0.85f, 0.25f, 1.f);
+				const float Need = FMath::Max(StaminaSeconds, 1.f);
+				State.Reel = FMath::Clamp(
+					State.Reel + (Efficiency * Rates.ReelGainScale * DeltaTime) / Need,
+					0.f,
+					1.f);
+			}
 		}
 		else
 		{
