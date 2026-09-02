@@ -13,7 +13,7 @@ class UCableComponent;
 class USceneComponent;
 
 /**
- * Owns the fishing loop: charge-cast, projectile, bait, fight, tension, reel.
+ * Owns fishing: charge-cast, wait, fight, then land or snap.
  * Attach to the boat (or any pawn). Designed to be subclassed / called from Blueprints.
  */
 UCLASS(ClassGroup = (BFL), Blueprintable, meta = (BlueprintSpawnableComponent))
@@ -111,7 +111,7 @@ public:
 	TSubclassOf<ABFLBaitActor> BaitClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
-	float ReelTensionRate = 0.16f;
+	float ReelTensionRate = 0.28f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
 	float TensionDecayRate = 0.30f;
@@ -127,7 +127,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float YellowTension = 0.55f;
 
-	/** Red band. Ease off. Overreel starts here. */
+	/** Red band. Ease off. Overreel starts here. Reel does not advance here. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float RedTension = 0.78f;
 
@@ -138,9 +138,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
 	float ReelLeakRate = 0.015f;
 
-	/** Scales reel gained while reeling. */
+	/** Scales reel gained while reeling in green/yellow. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BFL|Fight")
-	float ReelGainScale = 1.85f;
+	float ReelGainScale = 2.4f;
 
 	UFUNCTION(BlueprintPure, Category = "BFL|Fight")
 	float GetYellowTension() const { return YellowTension; }

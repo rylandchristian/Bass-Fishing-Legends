@@ -31,28 +31,37 @@ A fish calls `UBFLFishingComponent::NotifyFishBite(this)` after its own delay + 
 The component then:
 
 - Rejects the bite unless state is `Waiting` and bait is still available.
-- Stores `HookedFish`, sets tension to `0.22`, progress to `0`.
+- Stores `HookedFish`, sets tension to `StartTension` (0.22), reel to `0`.
 - State → `Fighting`.
 - Broadcasts **FISH ON!** plus the species name.
 
 ## Tension meter and reel
 
-Each fight tick (`TickFighting`):
+`TickFighting` calls `BFLFightMath::Tick` (same step the fight tests use). Pump: reel in green/yellow, ease off in red.
+
+Each fight tick:
 
 ```
 FishPull     = species.FightIntensity * pulse(sine + slow surge)
-Tension     += FishPull * 0.22 * dt
-if reeling:  Tension += ReelTensionRate * dt
-             if Tension > 0.70: extra OverreelPenalty
+Tension     += FishPull * FishPullToTension * dt          // default 0.16
+if reeling:  Tension += ReelTensionRate * dt              // default 0.28
+             if Tension > RedTension: extra OverreelPenalty
 else:        Tension -= TensionDecayRate * dt
-Tension      = clamp(floor, 1)
+Tension      = clamp(IdleTensionFloor, 1)
 
-if reeling:  ReelProgress += (1.15 - 0.85*Tension) * dt / species.StaminaSeconds
-else:        ReelProgress -= 0.06 * dt   // fish takes line back
+if reeling and Tension < RedTension:
+             Reel += (1.15 - 0.85*Tension) * ReelGainScale * dt / species.StaminaSeconds
+else if not reeling:
+             Reel -= ReelLeakRate * dt   // slow leak; the fish takes a little back
+// reeling in red does not advance reel
 ```
 
-**Success:** `ReelProgress >= 1` → `LandFish()`
-**Failure:** `Tension >= 1` → `SnapLine()`
+Bands: yellow at `YellowTension` (0.55), red at `RedTension` (0.78). HUD uses those same getters.
+
+**Land:** `Reel >= 1` → `LandFish()`
+**Snap:** `Tension >= 1` → `SnapLine()`
+
+After either outcome, the component returns to `Idle` so the next charge-cast can start.
 
 `LandFish`:
 

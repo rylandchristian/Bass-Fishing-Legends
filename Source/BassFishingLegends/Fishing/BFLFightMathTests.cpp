@@ -97,6 +97,18 @@ bool FBFLFight_HoldingReelSnapsLargemouth::RunTest(const FString& Parameters)
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBFLFight_HoldingReelSnapsCrappie,
+	"BFL.Fight.HoldingReelSnapsCrappie",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FBFLFight_HoldingReelSnapsCrappie::RunTest(const FString& Parameters)
+{
+	const float Seconds = SecondsToSnapIfHeld(CrappieIntensity, CrappieStamina, FBFLFightRates());
+	TestTrue(TEXT("Holding reel snaps a crappie before a land"), Seconds > 0.f);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBFLFight_PumpLandsTrophy,
 	"BFL.Fight.PumpLandsTrophy",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
@@ -166,6 +178,23 @@ bool FBFLFight_OverreelOnlyInRed::RunTest(const FString& Parameters)
 	BFLFightMath::Tick(Red, true, LargemouthIntensity, LargemouthStamina, 0.05f, Rates);
 	BFLFightMath::Tick(RedNoPen, true, LargemouthIntensity, LargemouthStamina, 0.05f, NoPenalty);
 	TestTrue(TEXT("Red reeling adds overreel"), Red.Tension > RedNoPen.Tension);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBFLFight_ReelingInRedDoesNotAdvanceReel,
+	"BFL.Fight.ReelingInRedDoesNotAdvanceReel",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FBFLFight_ReelingInRedDoesNotAdvanceReel::RunTest(const FString& Parameters)
+{
+	const FBFLFightRates Rates;
+	FBFLFightState State;
+	State.Tension = 0.90f;
+	State.Reel = 0.50f;
+	BFLFightMath::Tick(State, true, LargemouthIntensity, LargemouthStamina, 0.25f, Rates);
+	TestEqual(TEXT("Reel does not advance in red"), State.Reel, 0.50f);
+	TestTrue(TEXT("Tension still climbs in red"), State.Tension > 0.90f);
 	return true;
 }
 
