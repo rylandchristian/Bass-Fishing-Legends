@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.
+description: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, sharpen a plan or design, or uses any 'grill' trigger phrases (including former /grill-me).
 ---
 
 Interview the user relentlessly until you reach a shared understanding. Map this as a **design tree**: every decision branches into the decisions that hang off it.
@@ -20,3 +20,7 @@ Each round the user answers reshapes the tree — settled decisions push the fro
 Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent to find it — don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report — ask the rest of the frontier now. The _decisions_ are the user's — put each to them and wait.
 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
+
+## Stateless vs docs
+
+This skill is the interview primitive. For a **working directory** where you should leave a paper trail in `CONTEXT.md` and ADRs, callers use `/grill-with-docs` (which runs this primitive plus `/domain-modeling`). For a **stateless** sharpen of a plan, design, or piece of writing with no repo paper trail (former `/grill-me`), run this skill directly.
