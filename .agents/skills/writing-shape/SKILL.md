@@ -1,6 +1,6 @@
 ---
 name: writing-shape
-description: Writing, exploit — shape raw material into an article, paragraph by paragraph.
+description: Writing, exploit — shape raw material into an article, paragraph by paragraph or as a choose-your-own-adventure journey of beats.
 disable-model-invocation: true
 ---
 
@@ -69,6 +69,35 @@ When choosing how to render a block, weigh these tradeoffs out loud with the use
 ## Writing rhythm
 
 Append to the article file as each block is agreed. Re-read the file from disk before every write — the user may have edited between turns. Never overwrite blindly. If the user wants a paragraph rewritten, edit that specific paragraph in place; leave the rest alone.
+
+
+## Beat journey (from former `/writing-beats`)
+
+When the user wants a **choose-your-own-adventure** path through the pile instead of (or as well as) paragraph-by-paragraph shaping, run this beat loop. Keep [Grounding](#grounding) and [Pulling from the pile](#pulling-from-the-pile).
+
+1. **Establish the prerequisites** (same as above).
+2. Write **2–3 candidate starting beats**, drawn from the raw material. Each is a different entry point. Each may only lean on grounded concepts; note what new concepts each one grounds. Show the user the beats before writing to the article file. The user picks one. Preview what beats that pick unlocks — as if the user is seeing a little way down the path.
+3. Once the user picks a starting beat, write **only that beat** to the article file. A beat may be one sentence or several paragraphs — whatever that beat naturally is. Stop there.
+4. Re-read the article file from disk. Then offer **2–3 candidate next beats** — different directions the journey could pivot to from where the article now stands. Each must be reachable from the current grounded set; note what each one grounds and what it unlocks.
+5. Loop steps 3–5 until the article reaches a natural end.
+
+### What is a beat
+
+A beat is one move in the journey. It does one thing — sets a scene, lands a point, asks a question, drops an aside, twists the angle. Then it stops, leaving the reader at a place where the next beat can pivot.
+
+A beat is sized by what it needs:
+
+- A single sentence if that's all the move is.
+- A short paragraph if the move needs setup.
+- Multiple paragraphs if the beat is a self-contained vignette, argument, or example.
+
+If a "beat" needs five paragraphs and three subheadings, it's not a beat — it's two beats glued together. Split it.
+
+### Ending the journey
+
+The article ends when the journey is complete — not when the pile is empty. Most piles will have leftover fragments that don't make it in. That is fine.
+
+Candidate next beats must all be reachable from the current grounded set — and say what each one grounds, so the user can see which paths it opens.
 
 ## Out of scope
 
